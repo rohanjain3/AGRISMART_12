@@ -81,7 +81,9 @@ struct ExploreView: View {
             .navigationTitle("AgriSmart")
             .toolbar {
                 HStack {
-                    Image(systemName: "cart")
+                    NavigationLink(destination: AddToCartView()){
+                        Image(systemName: "cart")
+                    }
                     Image(systemName: "bell")
                 }
             }
