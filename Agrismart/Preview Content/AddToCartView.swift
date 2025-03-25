@@ -77,7 +77,7 @@ struct CartItemRow: View {
             Spacer()
 
             // Quantity Controls
-            quantityControls
+         quantityControls
         }
         .padding(.vertical, 8)
     }
@@ -115,41 +115,39 @@ struct CartItemRow: View {
         }
     }
 
-    // Controls to increment or decrement item quantity
+ //    Controls to increment or decrement item quantity
     private var quantityControls: some View {
         HStack(spacing: 10) {
-            decrementButton
-            Text("\(item.quantity)")
+            Text("\(item.quantity) Kg")
                 .font(.headline)
-            incrementButton
         }
     }
 
     // Button to decrement item quantity
-    private var decrementButton: some View {
-        Button(action: {
-            if item.quantity > 1 {
-                item.quantity -= 1
-                onUpdate() // Notify parent view to update total
-            }
-        }) {
-            Image(systemName: "minus")
-                .frame(width: 32, height: 32)
-                .background(Color.gray.opacity(0.1))
-                .cornerRadius(8)
-        }
-    }
-
-    // Button to increment item quantity
-    private var incrementButton: some View {
-        Button(action: {
-            item.quantity += 1
-            onUpdate() // Notify parent view to update total
-        }) {
-            Image(systemName: "plus")
-                .frame(width: 32, height: 32)
-                .background(Color.gray.opacity(0.1))
-                .cornerRadius(8)
-        }
-    }
+//    private var decrementButton: some View {
+//        Button(action: {
+//            if item.quantity > 1 {
+//                item.quantity -= 1
+//                onUpdate() // Notify parent view to update total
+//            }
+//        }) {
+//            Image(systemName: "minus")
+//                .frame(width: 32, height: 32)
+//                .background(Color.gray.opacity(0.1))
+//                .cornerRadius(8)
+//        }
+//    }
+//
+//    // Button to increment item quantity
+//    private var incrementButton: some View {
+//        Button(action: {
+//            item.quantity += 1
+//            onUpdate() // Notify parent view to update total
+//        }) {
+//            Image(systemName: "plus")
+//                .frame(width: 32, height: 32)
+//                .background(Color.gray.opacity(0.1))
+//                .cornerRadius(8)
+//        }
+//    }
 }

@@ -30,7 +30,8 @@ struct MainTabView: View {
                 .tag(2)
             
             // Chat Tab
-            Text("Chat View")
+            
+            ChatListView()
                 .tabItem {
                     Label("Chat", systemImage: "message")
                 }

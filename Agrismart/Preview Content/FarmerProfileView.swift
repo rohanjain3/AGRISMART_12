@@ -12,6 +12,7 @@ struct FarmerProfileView: View {
 
     var farmer: User
     @State private var isFollowing = false
+    @State private var showChatScreen = false // State to control navigation to chat screen
 
     var body: some View {
         VStack {
@@ -57,15 +58,19 @@ struct FarmerProfileView: View {
                         .cornerRadius(10)
                 }
                 Button(action: {
-                    // Message action
-                }) {
-                    Text("Message")
-                        .padding()
-                        .background(Color.green)
-                        .foregroundColor(.white)
-                        .cornerRadius(10)
-                }
-            }
+                                  showChatScreen = true // Navigate to chat screen
+                              }) {
+                                  Text("Message")
+                                      .padding()
+                                      .background(Color.green)
+                                      .foregroundColor(.white)
+                                      .cornerRadius(10)
+                              }
+                              .sheet(isPresented: $showChatScreen) {
+                                  ChatScreen(farmer: farmer) // Navigate to chat screen
+                              }
+                          }
+                          .padding()
             .padding()
 
             // Product List

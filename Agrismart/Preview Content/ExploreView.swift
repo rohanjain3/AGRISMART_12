@@ -109,7 +109,7 @@ struct ExploreView: View {
 
                             // Add to Cart Button
                             Button(action: {
-                                cartManager.addProduct(crop.toProduct(), quantity: 1) // Add crop to cart
+                                cartManager.addProduct(crop.toProduct(), quantity: 20) // Add crop to cart
                                 popupMessage = "\(crop.name) has been added to the cart."
                                 showPopup = true // Trigger popup
                             }) {
