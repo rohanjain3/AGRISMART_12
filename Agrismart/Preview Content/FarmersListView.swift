@@ -50,6 +50,8 @@ struct FarmersListView1: View {
                 .listStyle(PlainListStyle())
             }
             // .navigationTitle("Farmers")
+            .navigationTitle("Farmers")
+
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: {
@@ -165,7 +167,7 @@ struct FarmersListView1: View {
         static var previews: some View {
             NavigationView {
                 FarmersListView1()
-                    .navigationTitle("Farmers")
+//                    .navigationTitle("Farmers")
             }
         }
     }

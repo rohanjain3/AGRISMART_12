@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct FarmerProfileView: View {
+    let sampleFarmer = SampleData.farmers[0]
+
     var farmer: User
     @State private var isFollowing = false
 
@@ -69,7 +71,7 @@ struct FarmerProfileView: View {
             // Product List
             List {
                 ForEach(SampleData.products.filter { $0.farmerId == farmer.id }) { product in
-                    NavigationLink(destination: ProductDetailView(product: product)) {
+                    NavigationLink(destination: ProductDetailView(product: product, farmer: sampleFarmer)) {
                         ProductRow(product: product)
                     }
                 }
@@ -127,6 +129,7 @@ struct ProductDetailView1: View {
 struct FarmerProfileView_Previews: PreviewProvider {
     static var previews: some View {
         let sampleFarmer = SampleData.farmers[0]
+
         NavigationView {
             FarmerProfileView(farmer: sampleFarmer)
         }

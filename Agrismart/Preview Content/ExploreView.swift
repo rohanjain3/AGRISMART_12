@@ -9,89 +9,147 @@ import SwiftUI
 
 // MARK: - ExploreView
 struct ExploreView: View {
+    @ObservedObject var cartManager = CartManager.shared // Observe CartManager globally
+
     @State private var farmers = convertUsersToFarmers(SampleData.farmers)
     @State private var cropCategories = convertProductsToCategories(SampleData.products)
-    
+    @State private var showPopup: Bool = false // State for showing the popup message
+    @State private var popupMessage: String = "" // State for the popup message content
+
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     // Search Bar
-                    HStack {
-                        Image(systemName: "magnifyingglass")
-                            .foregroundColor(.gray)
-                        Text("Search for crops or farmers")
-                            .foregroundColor(.gray)
-                        Spacer()
-                    }
-                    .padding()
-                    .background(Color.gray.opacity(0.2))
-                    .cornerRadius(10)
-                    .padding(.horizontal)
-
+                    searchBar
+                    
                     // Farmer Profiles Section
-                    VStack(alignment: .leading) {
-                        HStack {
-                            Text("Farmer Profile")
-                                .font(.headline)
-                            Spacer()
-                            NavigationLink(destination: FarmersListView(farmers: farmers)) {
-                                Text("View all")
-                                    .foregroundColor(.blue)
-                            }
-                        }
-                        .padding(.horizontal)
-
-                        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                            ForEach(farmers.prefix(4)) { farmer in
-                                FarmerCardView(farmer: farmer)
-                            }
-                        }
-                        .padding(.horizontal)
-                    }
+                    farmerProfilesSection
                     
                     // Crop Categories Section
-                    VStack(alignment: .leading) {
-                        Text("Crop Categories")
-                            .font(.headline)
-                            .padding(.horizontal)
-                        
-                        ForEach(cropCategories) { category in
-                            VStack(alignment: .leading) {
-                                Text(category.name)
-                                    .font(.subheadline)
-                                    .bold()
-                                    .padding(.horizontal)
-                                
-                                ScrollView(.horizontal, showsIndicators: false) {
-                                    HStack(spacing: 12) {
-                                        ForEach(category.crops) { crop in
-                                            NavigationLink(destination: ProductDetailView(product: crop.toProduct())) {
-                                                CropCardView(crop: crop)
-                                            }
-                                        }
-                                    }
-                                    .padding(.horizontal)
-                                }
-                            }
-                        }
-                    }
+                    cropCategoriesSection
                 }
             }
             .navigationTitle("AgriSmart")
             .toolbar {
-                HStack {
-                    NavigationLink(destination: AddToCartView()){
-                        Image(systemName: "cart")
-                    }
-                    Image(systemName: "bell")
+                toolbarContent
+            }
+            .alert(isPresented: $showPopup) { // Display popup when showPopup is true
+                Alert(title: Text("Success"), message: Text(popupMessage), dismissButton: .default(Text("OK")))
+            }
+        }
+    }
+
+    // MARK: Subviews
+    private var searchBar: some View {
+        HStack {
+            Image(systemName: "magnifyingglass")
+                .foregroundColor(.gray)
+            Text("Search for crops or farmers")
+                .foregroundColor(.gray)
+            Spacer()
+        }
+        .padding()
+        .background(Color.gray.opacity(0.2))
+        .cornerRadius(10)
+        .padding(.horizontal)
+    }
+
+    private var farmerProfilesSection: some View {
+        VStack(alignment: .leading) {
+            HStack {
+                Text("Farmer Profile")
+                    .font(.headline)
+                Spacer()
+                NavigationLink(destination: FarmersListView(farmers: farmers)) {
+                    Text("View all")
+                        .foregroundColor(.blue)
                 }
+            }
+            .padding(.horizontal)
+
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                ForEach(farmers.prefix(4)) { farmer in
+                    NavigationLink(destination: FarmerProfileView(farmer: SampleData.farmers[0])) {
+                        FarmerCardView(farmer: farmer)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
+            }
+            .padding(.horizontal)
+        }
+    }
+
+    private var cropCategoriesSection: some View {
+        VStack(alignment: .leading) {
+            Text("Crop Categories")
+                .font(.headline)
+                .padding(.horizontal)
+
+            ForEach(cropCategories) { category in
+                cropCategorySection(for: category)
+            }
+        }
+    }
+
+    private func cropCategorySection(for category: CropCategory) -> some View {
+        VStack(alignment: .leading) {
+            Text(category.name)
+                .font(.subheadline)
+                .bold()
+                .padding(.horizontal)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    ForEach(category.crops) { crop in
+                        VStack {
+                            NavigationLink(destination: ProductDetailView(product: crop.toProduct(), farmer: SampleData.farmers[0])) {
+                                CropCardView(crop: crop)
+                            }
+
+                            // Add to Cart Button
+                            Button(action: {
+                                cartManager.addProduct(crop.toProduct(), quantity: 1) // Add crop to cart
+                                popupMessage = "\(crop.name) has been added to the cart."
+                                showPopup = true // Trigger popup
+                            }) {
+                                Text("Add to Cart")
+                                    .font(.caption)
+                                    .foregroundColor(.white)
+                                    .padding(8)
+                                    .background(Color.blue)
+                                    .cornerRadius(5)
+                            }
+                        }
+                    }
+                }
+                .padding(.horizontal)
+            }
+        }
+    }
+
+    private var toolbarContent: some View {
+        HStack {
+            NavigationLink(destination: AddToCartView()) {
+                Image(systemName: "cart")
+                    .overlay(
+                        Text("\(cartManager.cartItems.count)") // Badge showing cart item count
+                            .font(.footnote)
+                            .foregroundColor(.white)
+                            .padding(4)
+                            .background(Color.red)
+                            .clipShape(Circle())
+                            .offset(x: 10, y: -10)
+                    )
+            }
+            NavigationLink(destination: NotificationView()) {
+                Image(systemName: "bell")
             }
         }
     }
 }
 
-// MARK: - Helper functions
+// MARK: - Helper Functions
 func convertUsersToFarmers(_ users: [User]) -> [Farmer] {
     return users.map { user in
         Farmer(
@@ -106,11 +164,9 @@ func convertUsersToFarmers(_ users: [User]) -> [Farmer] {
 
 func convertProductsToCategories(_ products: [Product]) -> [CropCategory] {
     let groupedProducts = Dictionary(grouping: products) { $0.category }
-    
     return groupedProducts.map { (category, products) in
-        let categoryName = String(describing: category).capitalized
-        return CropCategory(
-            name: categoryName,
+        CropCategory(
+            name: category.rawValue.capitalized,
             crops: products.map { product in
                 Crop(
                     id: product.id,
@@ -139,7 +195,7 @@ struct Crop: Identifiable {
     let imageName: String
     let price: Double
     let originalProduct: Product
-    
+
     func toProduct() -> Product {
         return originalProduct
     }
@@ -154,7 +210,7 @@ struct CropCategory: Identifiable {
 // MARK: - Supporting Views
 struct CropCardView: View {
     let crop: Crop
-    
+
     var body: some View {
         VStack {
             Image(crop.imageName)
@@ -163,11 +219,11 @@ struct CropCardView: View {
                 .frame(width: 100, height: 100)
                 .clipped()
                 .cornerRadius(10)
-            
+
             Text(crop.name)
                 .font(.footnote)
                 .lineLimit(1)
-            
+
             Text("₹\(Int(crop.price))/kg")
                 .font(.caption)
                 .foregroundColor(.gray)
@@ -181,7 +237,7 @@ struct CropCardView: View {
 
 struct FarmerCardView: View {
     let farmer: Farmer
-    
+
     var body: some View {
         VStack {
             Image(farmer.imageName)
@@ -190,7 +246,7 @@ struct FarmerCardView: View {
                 .frame(height: 100)
                 .clipped()
                 .cornerRadius(10)
-            
+
             VStack(alignment: .leading) {
                 Text(farmer.name)
                     .font(.headline)
@@ -223,7 +279,7 @@ struct FarmerCardView: View {
 
 struct FarmersListView: View {
     let farmers: [Farmer]
-    
+
     var body: some View {
         List(farmers) { farmer in
             HStack {
@@ -231,7 +287,7 @@ struct FarmersListView: View {
                     .resizable()
                     .frame(width: 50, height: 50)
                     .clipShape(Circle())
-                
+
                 VStack(alignment: .leading) {
                     Text(farmer.name)
                         .font(.headline)
@@ -249,11 +305,3 @@ struct ExploreView_Previews: PreviewProvider {
         ExploreView()
     }
 }
-
-
-//struct ExploreView_Previews: PreviewProvider {
-//    static var previews: some View {
-//        ExploreView()
-//    }
-//}
-

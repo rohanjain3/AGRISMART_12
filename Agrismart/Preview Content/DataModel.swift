@@ -166,7 +166,7 @@ enum ProductStatus: String {
 
 struct OrderHistory: Codable {
     let orderId: String
-    let items: [CartItem]
+    let items: [CartItem1]
     let totalPrice: Double
     let shippingCost: Double
     let orderDate: Date
@@ -176,17 +176,21 @@ struct OrderHistory: Codable {
 // Struct for an order, containing multiple items
 struct Order: Identifiable {
     let id: UUID
-    var items: [OrderItem]
-    var buyer: UUID
-    var seller: UUID
-    var shippingAddress: Address
-    var status: OrderStatus
-    var createdAt: Date
+   // var items: [OrderItem]
+    let fullName: String
+    let address: String
+    let city: String
+    let state: String
+    let zipCode: String
+    let total: Double
+  //  var shippingAddress: Address
+  //  var status: OrderStatus
+  //  var createdAt: Date
     
     // Computed property to calculate the total amount of the order
-    var totalAmount: Double {
-        return items.reduce(0) { $0 + ($1.price * Double($1.quantity)) }
-    }
+//    var totalAmount: Double {
+//        return items.reduce(0) { $0 + ($1.price * Double($1.quantity)) }
+//    }
 }
 
 // Struct for an individual order item (product)
@@ -208,8 +212,9 @@ enum OrderStatus {
 
 // MARK: - Cart Model
 
-struct CartItem: Codable {
+struct CartItem1: Codable {
     let id: UUID
+    
     let name: String
     let details: String
     let pricePerUnit: Int
@@ -424,16 +429,16 @@ extension Address {
 }
 
 // Extension for Order to update status and get summary
-extension Order {
-    mutating func updateStatus(to newStatus: OrderStatus) {
-        self.status = newStatus
-    }
-    
-    func getSummary() -> String {
-        let itemCount = items.count
-        return "Order ID: \(id)\nItems: \(itemCount)\nTotal: \(totalAmount)\nStatus: \(status)"
-    }
-}
+//extension Order {
+//    mutating func updateStatus(to newStatus: OrderStatus) {
+//        self.status = newStatus
+//    }
+//    
+//    func getSummary() -> String {
+//        let itemCount = items.count
+//        return "Order ID: \(id)\nItems: \(itemCount)\nTotal: \(totalAmount)\nStatus: \(status)"
+//    }
+//}
 
 // Extension for Notification to manage read/unread status
 extension Notification {

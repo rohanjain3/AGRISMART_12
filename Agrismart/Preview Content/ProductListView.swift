@@ -9,6 +9,8 @@ import SwiftUI
 struct ProductListView: View {
     @State private var searchText = ""
     @State private var products = SampleData.products
+    let sampleFarmer = SampleData.farmers[0]
+
     @State private var filteredProducts = SampleData.products
 
     var body: some View {
@@ -29,7 +31,7 @@ struct ProductListView: View {
 
                 // Product List
                 List(filteredProducts) { product in
-                    NavigationLink(destination: ProductDetailView(product: product)) {
+                    NavigationLink(destination: ProductDetailView(product: product, farmer: sampleFarmer)) {
                         ProductRow1(product: product)
                     }
                 }
