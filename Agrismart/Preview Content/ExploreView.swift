@@ -11,10 +11,15 @@ import SwiftUI
 struct ExploreView: View {
     @ObservedObject var cartManager = CartManager.shared // Observe CartManager globally
 
-    @State private var farmers = convertUsersToFarmers(SampleData.farmers)
-    @State private var cropCategories = convertProductsToCategories(SampleData.products)
+    @State private var farmers = convertUsersToFarmers(SampleData.farmers) // Load all farmers initially
+    @State private var cropCategories = convertProductsToCategories(SampleData.products) // Categorized crops
+    @State private var crops: [Crop] = [] // Flattened list of all crops
+    @State private var filteredFarmers: [Farmer] = [] // Filtered farmers based on search
+    @State private var filteredCrops: [CropCategory] = [] // Filtered crop categories based on search
+    @State private var searchText: String = "" // State for the search text
     @State private var showPopup: Bool = false // State for showing the popup message
     @State private var popupMessage: String = "" // State for the popup message content
+    @State private var isSearching: Bool = false // Indicates if the user is actively searching
 
     var body: some View {
         NavigationStack {
@@ -25,7 +30,7 @@ struct ExploreView: View {
                     
                     // Farmer Profiles Section
                     farmerProfilesSection
-                    
+
                     // Crop Categories Section
                     cropCategoriesSection
                 }
@@ -37,6 +42,11 @@ struct ExploreView: View {
             .alert(isPresented: $showPopup) { // Display popup when showPopup is true
                 Alert(title: Text("Success"), message: Text(popupMessage), dismissButton: .default(Text("OK")))
             }
+            .onAppear {
+                crops = cropCategories.flatMap { $0.crops } // Flatten crops list on appearance
+                filteredCrops = cropCategories // Initialize filtered crops with all categories
+                applySearch() // Ensure all farmers and crops are displayed initially
+            }
         }
     }
 
@@ -45,9 +55,21 @@ struct ExploreView: View {
         HStack {
             Image(systemName: "magnifyingglass")
                 .foregroundColor(.gray)
-            Text("Search for crops or farmers")
-                .foregroundColor(.gray)
-            Spacer()
+            TextField("Search for crops or farmers...", text: $searchText, onEditingChanged: { isEditing in
+                isSearching = !searchText.isEmpty
+                applySearch()
+            }, onCommit: applySearch)
+                .onChange(of: searchText, perform: { _ in applySearch() })
+            if !searchText.isEmpty {
+                Button(action: {
+                    searchText = ""
+                    isSearching = false
+                    applySearch()
+                }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundColor(.gray)
+                }
+            }
         }
         .padding()
         .background(Color.gray.opacity(0.2))
@@ -58,7 +80,7 @@ struct ExploreView: View {
     private var farmerProfilesSection: some View {
         VStack(alignment: .leading) {
             HStack {
-                Text("Farmer Profile")
+                Text("Farmer Profiles")
                     .font(.headline)
                 Spacer()
                 NavigationLink(destination: FarmersListView(farmers: farmers)) {
@@ -69,7 +91,7 @@ struct ExploreView: View {
             .padding(.horizontal)
 
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                ForEach(farmers.prefix(4)) { farmer in
+                ForEach(Array(farmers.prefix(4))) { farmer in
                     NavigationLink(destination: FarmerProfileView(farmer: SampleData.farmers[0])) {
                         FarmerCardView(farmer: farmer)
                     }
@@ -86,7 +108,7 @@ struct ExploreView: View {
                 .font(.headline)
                 .padding(.horizontal)
 
-            ForEach(cropCategories) { category in
+            ForEach(filteredCrops) { category in
                 cropCategorySection(for: category)
             }
         }
@@ -103,7 +125,7 @@ struct ExploreView: View {
                 HStack(spacing: 12) {
                     ForEach(category.crops) { crop in
                         VStack {
-                            NavigationLink(destination: ProductDetailView(product: crop.toProduct(), farmer: SampleData.farmers[0])) {
+                            NavigationLink(destination: ProductDetailView(product: crop.toProduct(), farmer: SampleData.farmers.first(where: { $0.id == crop.originalProduct.farmerId }) ?? SampleData.farmers[0])) {
                                 CropCardView(crop: crop)
                             }
 
@@ -147,9 +169,33 @@ struct ExploreView: View {
             }
         }
     }
+
+    // MARK: - Helper Methods
+    private func applySearch() {
+        if searchText.isEmpty {
+            // Show all farmers and crop categories if no search query
+            filteredFarmers = farmers
+            filteredCrops = cropCategories
+        } else {
+            // Filter farmers and crop categories based on search query
+            filteredFarmers = farmers.filter {
+                $0.name.lowercased().contains(searchText.lowercased())
+            }
+            filteredCrops = cropCategories.map { category in
+                CropCategory(
+//                    id: category.id,
+                    name: category.name,
+                    crops: category.crops.filter { crop in
+                        crop.name.lowercased().contains(searchText.lowercased())
+                    }
+                )
+            }.filter { !$0.crops.isEmpty }
+        }
+    }
 }
 
-// MARK: - Helper Functions
+// MARK: - Supporting Functions and Models
+
 func convertUsersToFarmers(_ users: [User]) -> [Farmer] {
     return users.map { user in
         Farmer(
@@ -180,7 +226,6 @@ func convertProductsToCategories(_ products: [Product]) -> [CropCategory] {
     }
 }
 
-// MARK: - View Model Structures
 struct Farmer: Identifiable {
     let id: UUID
     let name: String
@@ -206,8 +251,9 @@ struct CropCategory: Identifiable {
     let name: String
     let crops: [Crop]
 }
-
 // MARK: - Supporting Views
+
+// Card view for crops
 struct CropCardView: View {
     let crop: Crop
 
@@ -235,6 +281,7 @@ struct CropCardView: View {
     }
 }
 
+// Card view for farmers
 struct FarmerCardView: View {
     let farmer: Farmer
 
@@ -277,6 +324,7 @@ struct FarmerCardView: View {
     }
 }
 
+// List view for farmers
 struct FarmersListView: View {
     let farmers: [Farmer]
 
@@ -300,6 +348,34 @@ struct FarmersListView: View {
     }
 }
 
+// MARK: - Product Detail View
+struct ProductDetailView2: View {
+    let product: Product
+    let farmer: Farmer
+
+    var body: some View {
+        VStack {
+            Image(product.imageNames.first ?? "placeholder_crop")
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 200, height: 200)
+            Text(product.name)
+                .font(.largeTitle)
+                .fontWeight(.bold)
+            Text("Price: ₹\(product.pricePerKg)/kg")
+                .font(.title2)
+                .foregroundColor(.gray)
+            Text("Sold by: \(farmer.name)")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+            Spacer()
+        }
+        .padding()
+        .navigationBarTitle(Text(product.name), displayMode: .inline)
+    }
+}
+
+// MARK: - Preview
 struct ExploreView_Previews: PreviewProvider {
     static var previews: some View {
         ExploreView()
